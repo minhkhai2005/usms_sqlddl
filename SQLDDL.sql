@@ -33,9 +33,9 @@ CREATE TABLE Employee (
 );
 CREATE TABLE Customer (
     Customer_ID nvarchar(128) PRIMARY KEY,
-    Customer_Name NVARCHAR(100) NOT NULL,
+    Customer_Name NVARCHAR(100),
     Customer_Phone VARCHAR(15),
-    Customer_Gender BIT NOT NULL,
+    Customer_Gender BIT,
     Store_ID nvarchar(128),
     FOREIGN KEY (Store_Id) REFERENCES Store(Store_ID),
 );
