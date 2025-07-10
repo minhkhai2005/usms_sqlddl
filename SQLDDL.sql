@@ -15,7 +15,7 @@ CREATE TABLE Store (
     Store_Address NVARCHAR(200),
     Manager_ID nvarchar(128),
     Store_Status bit,
-    Store_Email NVARCHAR(200),
+    Store_Email NVARCHAR(200) UNIQUE,
     FOREIGN KEY (Manager_ID) REFERENCES Manager(Manager_ID)
 );
 CREATE TABLE Employee (
@@ -50,12 +50,12 @@ CREATE TABLE Inventory (
     Store_ID nvarchar(128),
     Inventory_Stock INT NOT NULL,
     Inventory_Status bit, -- TODO: fix inventory status
-    Inventory_AlertQuality INT,
+    Inventory_AlertQuantity INT,
     FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID),
     FOREIGN KEY (Store_ID) REFERENCES Store(Store_ID),
     PRIMARY KEY (Product_ID, Store_ID),
     CHECK  (Inventory_Stock >= 0),
-    CHECK (Inventory_AlertQuality >= 0),
+    CHECK (Inventory_AlertQuantity >= 0),
 
 );
 CREATE TABLE Invoice (
@@ -93,7 +93,8 @@ CREATE TABLE Import (
     Import_Quantity INT,
     Import_Provider NVARCHAR(100),
     Import_Price Money,
-    Import_Date DATE
+    Import_Date DATE,
+    Import_Total MONEY,
     FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID),
     FOREIGN KEY (Store_ID) REFERENCES Store(Store_ID),
     CHECK (Import_Quantity > 0)
@@ -124,6 +125,14 @@ CREATE TABLE Shift (
     CHECK (Day_of_Week BETWEEN 1 AND 7),
     CHECK (Shift_Start < Shift_Finish)
 );
+
+CREATE TABLE Notification (
+    Notification_ID varchar(128) PRIMARY KEY,
+    Notification_Title NVARCHAR(128),
+    Notification_Content NVARCHAR(500),
+    Notifcation_Time DATETIME,
+    Store_ID NVARCHAR(128) REFERENCES Store(Store_ID)
+)
 GO
 
 -- trigger to prvent user from deleting paid invoices
@@ -199,5 +208,38 @@ BEGIN
     FROM InvoiceDetail id
     INNER JOIN inserted i ON id.Invoice_ID = i.Invoice_ID AND id.Product_ID = i.Product_ID
     INNER JOIN Product p ON id.Product_ID = p.Product_ID;
+END;
+GO
+
+-- Trigger to automatically update Inventory_Stock when importing products
+CREATE TRIGGER trg_UpdateInventoryOnImport
+ON Import
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    -- Update existing inventory records
+    UPDATE inv
+    SET Inventory_Stock = inv.Inventory_Stock + i.Import_Quantity
+    FROM Inventory inv
+    INNER JOIN inserted i ON inv.Product_ID = i.Product_ID AND inv.Store_ID = i.Store_ID;
+    
+    -- Insert new inventory records for products that don't exist in the store's inventory
+    INSERT INTO Inventory (Product_ID, Store_ID, Inventory_Stock, Inventory_Status, Inventory_AlertQuantity)
+    SELECT 
+        i.Product_ID,
+        i.Store_ID,
+        i.Import_Quantity,
+        1, -- Default status to active
+        10 -- Default alert quality threshold
+    FROM inserted i
+    WHERE NOT EXISTS (
+        SELECT 1 
+        FROM Inventory inv 
+        WHERE inv.Product_ID = i.Product_ID AND inv.Store_ID = i.Store_ID
+    );
+    
+    PRINT 'Inventory updated successfully after import.';
 END;
 GO
