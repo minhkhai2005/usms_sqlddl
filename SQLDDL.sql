@@ -35,6 +35,7 @@ CREATE TABLE Customer (
     Customer_ID nvarchar(128) PRIMARY KEY,
     Customer_Name NVARCHAR(100),
     Customer_Phone VARCHAR(15),
+    Customer_Email NVARCHAR(128),
     Customer_Gender BIT,
     Store_ID nvarchar(128),
     FOREIGN KEY (Store_Id) REFERENCES Store(Store_ID),
