@@ -165,7 +165,7 @@ BEGIN
     SET NOCOUNT ON;
     
     -- Declare variables for affected Invoice IDs
-    DECLARE @AffectedInvoices TABLE (Invoice_ID char(4));
+    DECLARE @AffectedInvoices TABLE (Invoice_ID nvarchar(128));
     
     -- Collect all Invoice IDs that need to be updated
     INSERT INTO @AffectedInvoices (Invoice_ID)
