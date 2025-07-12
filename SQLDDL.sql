@@ -135,6 +135,13 @@ CREATE TABLE Notification (
     Store_ID NVARCHAR(128) REFERENCES Store(Store_ID)
 )
 GO
+    CREATE TABLE Message (
+    Id INT IDENTITY(1,1) PRIMARY KEY,         -- Khóa chính tự tăng
+    SenderId NVARCHAR(100) NOT NULL,          -- ID người gửi (Store_ID hoặc email manager)
+    ReceiverId NVARCHAR(100) NOT NULL,        -- ID người nhận (Store_ID hoặc email manager)
+    Content NVARCHAR(MAX) NOT NULL,           -- Nội dung tin nhắn
+    Timestamp DATETIME NOT NULL DEFAULT GETDATE()  -- Thời gian gửi tin nhắn
+);
 
 -- trigger to prvent user from deleting paid invoices
 CREATE TRIGGER prevent_paid_invoice_delete
